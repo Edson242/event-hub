@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
+@SuppressWarnings("serial")
 @Entity
 @Table(name = "users")
 @Data
