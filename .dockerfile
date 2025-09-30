@@ -1,4 +1,4 @@
-# Usar uma imagem base oficial do Java 21
+# Usar uma imagem base oficial do Java 21 (mesma versão do seu projeto)
 FROM openjdk:21-jdk-slim
 
 # Define o diretório de trabalho dentro do container
@@ -8,9 +8,7 @@ WORKDIR /app
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 
-RUN chmod +x ./mvnw
-
-# Baixa as dependências.
+# Baixa as dependências. Isso otimiza o cache em builds futuros.
 RUN ./mvnw dependency:go-offline
 
 # Copia o resto do código fonte da sua aplicação
