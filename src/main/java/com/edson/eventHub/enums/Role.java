@@ -1,4 +1,4 @@
-package com.edson.eventHub.enuns;
+package com.edson.eventHub.enums;
 
 public enum Role {
     /**

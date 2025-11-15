@@ -1,13 +1,14 @@
 package com.edson.eventHub.dto;
 
 import com.edson.eventHub.entities.User;
-import com.edson.eventHub.enuns.Role;
+import com.edson.eventHub.enums.Role;
+
 import lombok.Data;
 
 @Data
 public class UserResponseDTO {
     
-    private Integer id;
+    private Long id;
     private String name;
     private String email;
     private Role role;

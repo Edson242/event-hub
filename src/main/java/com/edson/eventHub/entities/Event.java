@@ -2,13 +2,17 @@ package com.edson.eventHub.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.OffsetDateTime;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime; // MUDANÇA (import removido de LocalDateTime)
+import java.util.Objects; // ADICIONADO
 
 @Getter
 @Setter
+@NoArgsConstructor // Boa prática adicionar
 @Entity
 @Table(name = "events")
 public class Event {
@@ -16,100 +20,50 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String title;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "date_time", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime eventDate;
+    @Column(name = "date_time", nullable = false)
+    private OffsetDateTime eventDate; // Isto estava correto!
 
-    @Column(length = 255)
+    @Column
     private String location;
 
     @Column(name = "max_participants")
     private Integer maxParticipants;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    /**
+     * MUDANÇA: Corrigido para OffsetDateTime e @CreationTimestamp
+     */
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    /**
+     * MUDANÇA: Corrigido para OffsetDateTime e @UpdateTimestamp
+     */
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = createdAt;
+    // Os métodos @PrePersist e @PreUpdate foram removidos.
+    
+    // Os getters e setters manuais foram removidos (Lombok cuida disso).
+
+    // ADICIONADO: Boa prática de equals/hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Event event = (Event) o;
+        return Objects.equals(id, event.id);
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public OffsetDateTime getEventDate() {
-		return eventDate;
-	}
-
-	public void setEventDate(OffsetDateTime eventDate) {
-		this.eventDate = eventDate;
-	}
-
-	public String getLocation() {
-		return location;
-	}
-
-	public void setLocation(String location) {
-		this.location = location;
-	}
-
-	public Integer getMaxParticipants() {
-		return maxParticipants;
-	}
-
-	public void setMaxParticipants(Integer maxParticipants) {
-		this.maxParticipants = maxParticipants;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public LocalDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public void setUpdatedAt(LocalDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-
 }

@@ -1,76 +1,83 @@
 package com.edson.eventHub.entities;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.OffsetDateTime; // MUDANÇA
+import java.util.List; // ADICIONADO
+import java.util.Objects; // ADICIONADO
 
 @Entity
 @Table(name = "participants")
+@Getter // ADICIONADO (Lombok)
+@Setter // ADICIONADO (Lombok)
+@NoArgsConstructor // ADICIONADO (Lombok)
 public class Participant {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    /**
+     * Relacionamento: Muitos participantes podem estar ligados a uma conta de usuário.
+     * Nulo se for "guest checkout".
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(length = 20)
     private String phone;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    /**
+     * MUDANÇA: Usando @CreationTimestamp para ser gerenciado pelo Hibernate
+     * e OffsetDateTime para 'timestamp with time zone'.
+     */
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
+    /**
+     * MUDANÇA: Campo 'updated_at' que faltava.
+     */
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+    
+    /**
+     * MELHORIA: Relacionamento inverso para ver todos os ingressos 
+     * deste participante.
+     */
+    @OneToMany(mappedBy = "participant")
+    private List<Ticket> tickets;
+
+    // O método onCreate() e o @PrePersist foram removidos.
+    // Os Getters/Setters manuais foram removidos em favor do Lombok.
+
+    /**
+     * MUDANÇA: Implementação segura de equals e hashCode
+     * (Importante por causa do @OneToMany)
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Participant that = (Participant) o;
+        return Objects.equals(id, that.id);
     }
 
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getPhone() {
-		return phone;
-	}
-
-	public void setPhone(String phone) {
-		this.phone = phone;
-	}
-
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
-
-    // Getters e setters
-    // ...
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

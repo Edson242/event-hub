@@ -1,25 +1,33 @@
 package com.edson.eventHub.entities;
 
-import com.edson.eventHub.enuns.Role;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
+import com.edson.eventHub.enums.Role;
+
+import java.time.OffsetDateTime; // MUDANÇA: de LocalDateTime para OffsetDateTime
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @SuppressWarnings("serial")
 @Entity
 @Table(name = "users")
-@Data
-public class User implements UserDetails { // <-- PRECISA IMPLEMENTAR UserDetails
+@Getter // MUDANÇA: Substituí @Data
+@Setter // MUDANÇA: Substituí @Data
+@NoArgsConstructor // MUDANÇA: Adicionado construtor padrão
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id; // MUDANÇA: de Integer para Long
 
     @Column(nullable = false)
     private String name;
@@ -31,19 +39,21 @@ public class User implements UserDetails { // <-- PRECISA IMPLEMENTAR UserDetail
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(nullable = false, length = 20) // Boa prática: definir 'nullable = false' para Role
     private Role role;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    @CreationTimestamp // MUDANÇA: Mais limpo que @PrePersist
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt; // MUDANÇA: Tipo de dado corrigido
+
+    @UpdateTimestamp // MUDANÇA: Campo 'updated_at' que faltava
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt; // MUDANÇA: Tipo de dado corrigido
     
     @OneToMany(mappedBy = "user")
     private List<Participant> participations;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
+    // (O @PrePersist foi removido pois @CreationTimestamp faz o trabalho)
     
     //-----------------------------------------------------//
     // MÉTODOS OBRIGATÓRIOS DA INTERFACE UserDetails
@@ -51,6 +61,10 @@ public class User implements UserDetails { // <-- PRECISA IMPLEMENTAR UserDetail
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Se 'role' puder ser nulo, você precisa tratar isso aqui
+        if (this.role == null) {
+            return List.of();
+        }
         return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
@@ -64,6 +78,7 @@ public class User implements UserDetails { // <-- PRECISA IMPLEMENTAR UserDetail
         return this.email;
     }
 
+    // Padrão, pode ser customizado depois com campos no banco (ex: isEnabled)
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -82,5 +97,19 @@ public class User implements UserDetails { // <-- PRECISA IMPLEMENTAR UserDetail
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    // MUDANÇA: Implementação segura de equals e hashCode
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
