@@ -16,11 +16,6 @@ public class TicketType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Relacionamento: Muitos Tipos de Ingresso pertencem a um Evento.
-     * FetchType.LAZY: Não carrega o Evento do banco a menos que você
-     * chame getEvent().
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
@@ -28,10 +23,6 @@ public class TicketType {
     @Column(nullable = false)
     private String name;
 
-    /**
-     * 'numeric' do Postgres deve ser mapeado para BigDecimal em Java
-     * para garantir a precisão monetária.
-     */
     @Column(nullable = false)
     private BigDecimal price;
 
@@ -46,16 +37,9 @@ public class TicketType {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    // --- Construtores, Getters/Setters, equals/hashCode ---
-
-    /**
-     * Construtor padrão exigido pelo JPA.
-     */
     public TicketType() {
     }
 
-    // Getters e Setters
-    
     public Long getId() {
         return id;
     }
@@ -112,10 +96,6 @@ public class TicketType {
         this.updatedAt = updatedAt;
     }
 
-    /**
-     * É uma boa prática implementar equals e hashCode em entidades
-     * para que coleções (Sets, Maps) funcionem corretamente.
-     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

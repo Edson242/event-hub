@@ -16,12 +16,18 @@ import com.edson.eventHub.dto.UserResponseDTO;
 import com.edson.eventHub.entities.User;
 import com.edson.eventHub.services.UserService;
 
+import jakarta.validation.Valid;
+
+/**
+ * Controlador REST para gerenciar usuários.
+ * Fornece endpoints para criar, recuperar, atualizar e deletar usuários.
+ * O acesso a estes endpoints é restrito a administradores.
+ */
 @RestController
 @RequestMapping("/users")
 public class UserController {
 	private final UserService userService;
 	private final PasswordEncoder passwordEncoder;
-	// LOG 1: Declaração do Logger
 	private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
 	public UserController(UserService userService, PasswordEncoder passwordEncoder) {
@@ -29,122 +35,119 @@ public class UserController {
 		this.passwordEncoder = passwordEncoder;
 	}
 
+	/**
+	 * GET /users : Recupera todos os usuários.
+	 *
+	 * @return um ResponseEntity com uma lista de usuários (como DTOs).
+	 */
 	@GetMapping
 	public ResponseEntity<List<UserResponseDTO>> getAll() {
 		logger.info("Buscando todos os usuários");
-		try {
-			List<UserResponseDTO> userDTOs = userService.findAll().stream()
-					.map(UserResponseDTO::fromEntity)
-					.collect(Collectors.toList());
-			return ResponseEntity.ok(userDTOs);
-		} catch (Exception e) {
-			logger.error("Erro ao buscar todos os usuários", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+		List<UserResponseDTO> userDTOs = userService.findAll().stream()
+				.map(UserResponseDTO::fromEntity)
+				.collect(Collectors.toList());
+		return ResponseEntity.ok(userDTOs);
 	}
 
+	/**
+	 * GET /users/{id} : Recupera um usuário específico pelo seu ID.
+	 *
+	 * @param id o ID do usuário a ser recuperado.
+	 * @return um ResponseEntity com o usuário (como DTO), ou 404 (Not Found).
+	 */
 	@GetMapping("/{id}")
 	public ResponseEntity<UserResponseDTO> getById(@PathVariable Long id) {
 		logger.info("Buscando usuário com ID: {}", id);
-		try {
-			Optional<User> user = userService.findById(id);
-			if (user.isPresent()) {
-				logger.info("Usuário com ID: {} encontrado.", id);
-				return ResponseEntity.ok(UserResponseDTO.fromEntity(user.get()));
-			} else {
-				logger.warn("Usuário com ID: {} não encontrado.", id);
-				return ResponseEntity.notFound().build();
-			}
-		} catch (Exception e) {
-			logger.error("Erro ao buscar usuário com ID: {}", id, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+		Optional<User> user = userService.findById(id);
+        if (user.isPresent()) {
+            logger.info("Usuário com ID: {} encontrado.", id);
+            return ResponseEntity.ok(UserResponseDTO.fromEntity(user.get()));
+        } else {
+            logger.warn("Usuário com ID: {} não encontrado.", id);
+            return ResponseEntity.notFound().build();
+        }
 	}
 
+	/**
+	 * POST /users : Cria um novo usuário.
+	 * A senha do usuário será codificada antes de salvar.
+	 *
+	 * @param user o objeto de usuário a ser criado.
+	 * @return um ResponseEntity com o usuário criado (como DTO).
+	 */
 	@PostMapping
-	public ResponseEntity<UserResponseDTO> create(@RequestBody User user) {
-		// Loga o email, que é seguro. NUNCA logar a senha.
+	public ResponseEntity<UserResponseDTO> create(@Valid @RequestBody User user) {
 		logger.info("Criando novo usuário com email: {}", user.getEmail());
-		try {
-			// A senha recebida em user.getPasswordHash() é a senha pura,
-			// que será codificada
-			String hashedPassword = passwordEncoder.encode(user.getPasswordHash());
-			user.setPasswordHash(hashedPassword);
-			
-			User savedUser = userService.save(user);
-			logger.info("Usuário criado com sucesso. ID: {}", savedUser.getId());
-			// Retorna 201 Created com o DTO
-			return ResponseEntity.status(HttpStatus.CREATED)
-								 .body(UserResponseDTO.fromEntity(savedUser));
-		} catch (Exception e) {
-			logger.error("Erro ao criar usuário com email: {}", user.getEmail(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+		String hashedPassword = passwordEncoder.encode(user.getPassword());
+		user.setPasswordHash(hashedPassword);
+		
+		User savedUser = userService.save(user);
+		logger.info("Usuário criado com sucesso. ID: {}", savedUser.getId());
+		return ResponseEntity.status(HttpStatus.CREATED)
+								.body(UserResponseDTO.fromEntity(savedUser));
 	}
 
+	/**
+	 * PUT /users/{id} : Atualiza um usuário existente.
+	 *
+	 * @param id o ID do usuário a ser atualizado.
+	 * @param userDetails os dados atualizados do usuário.
+	 * @return um ResponseEntity com o usuário atualizado (como DTO), ou 404 (Not Found).
+	 */
 	@PutMapping("/{id}")
-	public ResponseEntity<UserResponseDTO> update(@PathVariable Long id, @RequestBody User userDetails) {
+	public ResponseEntity<UserResponseDTO> update(@PathVariable Long id, @Valid @RequestBody User userDetails) {
 		logger.info("Iniciando atualização para usuário com ID: {}", id);
-		try {
-			Optional<User> userOpt = userService.findById(id);
-			if (!userOpt.isPresent()) {
-				logger.warn("Falha ao atualizar. Usuário com ID: {} não encontrado.", id);
-				return ResponseEntity.notFound().build();
-			}
-			User user = userOpt.get();
-			user.setName(userDetails.getName());
-			user.setEmail(userDetails.getEmail());
-			user.setRole(userDetails.getRole());
-			user.setParticipations(userDetails.getParticipations());
-			// A senha NÃO é atualizada aqui, o que é correto.
-
-			User updated = userService.save(user);
-			logger.info("Usuário com ID: {} atualizado com sucesso.", updated.getId());
-			return ResponseEntity.ok(UserResponseDTO.fromEntity(updated));
-			
-		} catch (Exception e) {
-			logger.error("Erro ao atualizar usuário com ID: {}", id, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+		return userService.findById(id)
+			.map(user -> {
+				user.setName(userDetails.getName());
+				user.setEmail(userDetails.getEmail());
+				user.setRole(userDetails.getRole());
+				// Nota: A senha não é atualizada aqui. Use o endpoint dedicado.
+				User updated = userService.save(user);
+				logger.info("Usuário com ID: {} atualizado com sucesso.", updated.getId());
+				return ResponseEntity.ok(UserResponseDTO.fromEntity(updated));
+			})
+			.orElseGet(() -> {
+                logger.warn("Falha ao atualizar. Usuário com ID: {} não encontrado.", id);
+                return ResponseEntity.notFound().build();
+            });
 	}
 
+	/**
+	 * PATCH /users/{id}/change-password : Altera a senha de um usuário.
+	 *
+	 * @param id o ID do usuário.
+	 * @param request DTO contendo a senha antiga e a nova.
+	 * @return um ResponseEntity com status 204 (No Content) em sucesso, ou 400 (Bad Request) em falha.
+	 */
 	@PatchMapping("/{id}/change-password")
-	public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody PasswordChangeRequestDTO request) {
-		// NUNCA logar o DTO 'request', pois ele contém senhas
+	public ResponseEntity<Void> changePassword(@PathVariable Long id, @Valid @RequestBody PasswordChangeRequestDTO request) {
 		logger.info("Iniciando troca de senha para usuário com ID: {}", id);
 		try {
 			userService.changePassword(id, request.getOldPassword(), request.getNewPassword());
 			logger.info("Senha alterada com sucesso para usuário ID: {}", id);
-			return ResponseEntity.noContent().build(); // 204 No Content
-			
+			return ResponseEntity.noContent().build();
 		} catch (RuntimeException e) {
-			// Captura erros de negócio (ex: "senha antiga errada")
 			logger.warn("Falha na lógica de troca de senha para ID: {}. Motivo: {}", id, e.getMessage());
-			// Retorna 400 Bad Request (ou 401/403 dependendo da sua regra)
-			return ResponseEntity.badRequest().body(null); 
-			
-		} catch (Exception e) {
-			// Captura erros inesperados (ex: falha de banco)
-			logger.error("Erro inesperado ao trocar senha para ID: {}", id, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			return ResponseEntity.badRequest().build();
 		}
 	}
 
+	/**
+	 * DELETE /users/{id} : Deleta um usuário pelo seu ID.
+	 *
+	 * @param id o ID do usuário a ser deletado.
+	 * @return um ResponseEntity com status 204 (No Content) ou 404 (Not Found).
+	 */
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id) {
 		logger.info("Iniciando exclusão do usuário com ID: {}", id);
-		try {
-			if (!userService.findById(id).isPresent()) {
-				logger.warn("Falha ao excluir. Usuário com ID: {} não encontrado.", id);
-				return ResponseEntity.notFound().build();
-			}
-			userService.deleteById(id);
-			logger.info("Usuário com ID: {} excluído com sucesso.", id);
-			return ResponseEntity.noContent().build(); // 204 No Content
-
-		} catch (Exception e) {
-			logger.error("Erro ao excluir usuário com ID: {}", id, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		if (!userService.findById(id).isPresent()) {
+			logger.warn("Falha ao excluir. Usuário com ID: {} não encontrado.", id);
+			return ResponseEntity.notFound().build();
 		}
+		userService.deleteById(id);
+		logger.info("Usuário com ID: {} excluído com sucesso.", id);
+		return ResponseEntity.noContent().build();
 	}
 }

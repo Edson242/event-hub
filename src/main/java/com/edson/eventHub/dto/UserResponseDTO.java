@@ -13,7 +13,6 @@ public class UserResponseDTO {
     private String email;
     private Role role;
 
-    // Método de conversão: Transforma uma entidade User em um UserResponseDTO
     public static UserResponseDTO fromEntity(User user) {
         UserResponseDTO dto = new UserResponseDTO();
         dto.setId(user.getId());

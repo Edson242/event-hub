@@ -12,7 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.edson.eventHub.enums.Role;
 
-import java.time.OffsetDateTime; // MUDANÇA: de LocalDateTime para OffsetDateTime
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -20,14 +20,14 @@ import java.util.Objects;
 @SuppressWarnings("serial")
 @Entity
 @Table(name = "users")
-@Getter // MUDANÇA: Substituí @Data
-@Setter // MUDANÇA: Substituí @Data
-@NoArgsConstructor // MUDANÇA: Adicionado construtor padrão
+@Getter
+@Setter
+@NoArgsConstructor
 public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // MUDANÇA: de Integer para Long
+    private Long id; 
 
     @Column(nullable = false)
     private String name;
@@ -39,29 +39,22 @@ public class User implements UserDetails {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20) // Boa prática: definir 'nullable = false' para Role
+    @Column(nullable = false, length = 20) 
     private Role role;
 
-    @CreationTimestamp // MUDANÇA: Mais limpo que @PrePersist
+    @CreationTimestamp 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt; // MUDANÇA: Tipo de dado corrigido
+    private OffsetDateTime createdAt; 
 
-    @UpdateTimestamp // MUDANÇA: Campo 'updated_at' que faltava
+    @UpdateTimestamp 
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt; // MUDANÇA: Tipo de dado corrigido
+    private OffsetDateTime updatedAt; 
     
     @OneToMany(mappedBy = "user")
     private List<Participant> participations;
 
-    // (O @PrePersist foi removido pois @CreationTimestamp faz o trabalho)
-    
-    //-----------------------------------------------------//
-    // MÉTODOS OBRIGATÓRIOS DA INTERFACE UserDetails
-    //-----------------------------------------------------//
-    
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Se 'role' puder ser nulo, você precisa tratar isso aqui
         if (this.role == null) {
             return List.of();
         }
@@ -78,7 +71,6 @@ public class User implements UserDetails {
         return this.email;
     }
 
-    // Padrão, pode ser customizado depois com campos no banco (ex: isEnabled)
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -99,7 +91,6 @@ public class User implements UserDetails {
         return true;
     }
 
-    // MUDANÇA: Implementação segura de equals e hashCode
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

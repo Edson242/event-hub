@@ -2,11 +2,11 @@ package com.edson.eventHub.entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.OffsetDateTime; // MUDANÇA
+import java.time.OffsetDateTime;
 import java.util.Objects;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp; // ADICIONADO
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.edson.eventHub.enums.DiscountType;
 
@@ -18,60 +18,57 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "discount_coupons")
-@Getter // ADICIONADO
-@Setter // ADICIONADO
-@NoArgsConstructor // ADICIONADO
+@Getter
+@Setter
+@NoArgsConstructor
 public class DiscountCoupon {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "O código não pode ser vazio.")
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
+    @NotNull(message = "O valor do desconto não pode ser nulo.")
+    @Positive(message = "O valor do desconto deve ser positivo.")
     @Column(name = "discount_value", nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue;
 
-    /**
-     * MUDANÇA: Usando Enum para segurança de tipo.
-     */
+    @NotNull(message = "O tipo de desconto não pode ser nulo.")
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false, length = 10)
     private DiscountType discountType; 
 
+    @FutureOrPresent(message = "A data de validade não pode ser no passado.")
     @Column(name = "valid_until")
     private LocalDate validUntil;
 
+    @Positive(message = "O número máximo de usos deve ser positivo.")
     @Column(name = "max_uses", columnDefinition = "integer default 0")
     private Integer maxUses; 
 
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer uses = 0;
 
-    /**
-     * MUDANÇA: Corrigido para OffsetDateTime e @CreationTimestamp
-     */
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    /**
-     * MELHORIA: Campo adicionado para consistência do schema.
-     * (Requer alteração no seu banco de dados)
-     */
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
-
-    // O método onCreate() e o @PrePersist foram removidos.
-    // Os getters/setters manuais foram removidos em favor do Lombok.
     
     @Override
     public boolean equals(Object o) {

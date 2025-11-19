@@ -2,6 +2,7 @@ package com.edson.eventHub.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,16 +15,26 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
-    // Não vamos injetar nada no construtor desta classe.
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthFilter) throws Exception {
-        // O JwtAuthenticationFilter é injetado diretamente aqui, no método do bean.
         return http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**").permitAll()
+                        
+                        // Permite a todos os usuários autenticados visualizar recursos
+                        .requestMatchers(HttpMethod.GET, "/events/**", "/discount-coupons/**").authenticated()
+                        
+                        // Apenas ADMIN pode criar, editar e deletar
+                        .requestMatchers("/events/**", "/discount-coupons/**", "/users/**").hasRole("ADMIN")
+                        
+                        // Qualquer usuário autenticado pode comprar e validar tickets
+                        .requestMatchers("/tickets/buy", "/tickets/validate").authenticated()
+                        
+                        // Apenas ADMIN pode gerenciar tickets (ver todos, editar, deletar)
+                        .requestMatchers("/tickets", "/tickets/**").hasRole("ADMIN")
+                        
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

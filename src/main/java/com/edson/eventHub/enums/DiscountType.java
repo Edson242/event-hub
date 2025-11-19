@@ -1,4 +1,4 @@
-package com.edson.eventHub.enums; // ou o pacote de enums que preferir
+package com.edson.eventHub.enums;
 
 public enum DiscountType {
     PERCENT,

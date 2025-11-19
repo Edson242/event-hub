@@ -31,7 +31,6 @@ public class Ticket {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    // --- CORRIGIDO: Faltava TicketType ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_type_id", nullable = false)
     private TicketType ticketType;
@@ -40,7 +39,6 @@ public class Ticket {
     @JoinColumn(name = "participant_id", nullable = false)
     private Participant participant;
 
-    // --- CORRIGIDO: Faltava DiscountCoupon ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "discount_coupon_id") 
     private DiscountCoupon discountCoupon;
@@ -48,19 +46,17 @@ public class Ticket {
     @Column(name = "ticket_code", unique = true, nullable = false, length = 100)
     private String ticketCode;
 
-    // --- MELHORIA: Usando Enum ---
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TicketStatus status;
 
-    // --- MELHORIA: Campos de auditoria automáticos ---
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt; // Note a mudança para OffsetDateTime
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt; // Note a mudança para OffsetDateTime
+    private OffsetDateTime updatedAt;
 
 	public Long getId() {
 		return id;
