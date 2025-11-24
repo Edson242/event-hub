@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.edson.eventHub.dto.LoginRequestDTO;
 import com.edson.eventHub.dto.LoginResponseDTO;
+import com.edson.eventHub.dto.UserResponseDTO;
 import com.edson.eventHub.entities.User;
 import com.edson.eventHub.repository.UserRepository;
 import com.edson.eventHub.services.TokenService;
@@ -64,10 +65,11 @@ public class AuthController {
 
             logger.info("Usuário autenticado com sucesso: {}", userDetails.getUsername());
             String token = tokenService.generateToken(user);
+            UserResponseDTO userResponse = UserResponseDTO.fromEntity(user);
 
             logger.debug("Token JWT gerado para o usuário: {}", user.getEmail());
 
-            return ResponseEntity.ok(new LoginResponseDTO(token));
+            return ResponseEntity.ok(new LoginResponseDTO(token, userResponse));
 
         } catch (BadCredentialsException e) {
             logger.warn("Falha na autenticação (credenciais inválidas) para o email: {}", loginRequest.email());
