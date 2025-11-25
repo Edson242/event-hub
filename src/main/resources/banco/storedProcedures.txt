@@ -1,0 +1,62 @@
+-- PROCEDIMENTO 1: Regra de Negócio da Compra Segura
+create or replace function comprar_ingresso(
+  p_event_id int8,
+  p_participant_id int8,
+  p_ticket_type_id int8,
+  p_ticket_code varchar
+)
+returns json
+language plpgsql
+as $$
+declare
+  v_stock int;
+  v_ticket_id int8;
+begin
+  -- Verifica o estoque travando a linha (segurança contra venda dupla)
+  select quantity into v_stock from ticket_types where id = p_ticket_type_id for update;
+
+  -- Regra de Negócio: Se não tem estoque, para tudo.
+  if v_stock <= 0 then
+    raise exception 'Estoque Esgotado!';
+  end if;
+
+  -- Decrementa estoque
+  update ticket_types set quantity = quantity - 1 where id = p_ticket_type_id;
+
+  -- Gera o ingresso
+  insert into tickets (event_id, participant_id, ticket_type_id, ticket_code, status, created_at)
+  values (p_event_id, p_participant_id, p_ticket_type_id, p_ticket_code, 'ATIVO', now())
+  returning id into v_ticket_id;
+
+  return json_build_object('status', 'success', 'ticket_id', v_ticket_id);
+end;
+$$;
+
+-- PROCEDIMENTO 2: Regra de Negócio do Check-in (Validação)
+create or replace function realizar_checkin(
+  p_ticket_code varchar
+)
+returns json
+language plpgsql
+as $$
+declare
+  v_ticket_record record;
+begin
+  select * into v_ticket_record from tickets where ticket_code = p_ticket_code;
+
+  -- Regra 1: Ingresso existe?
+  if v_ticket_record.id is null then
+    return json_build_object('status', 'error', 'message', 'Ingresso não existe.');
+  end if;
+
+  -- Regra 2: Já foi usado ou cancelado?
+  if v_ticket_record.status != 'ATIVO' then
+    return json_build_object('status', 'error', 'message', 'Ingresso inválido ou já usado.');
+  end if;
+
+  -- Atualiza para USADO
+  update tickets set status = 'USADO', updated_at = now() where id = v_ticket_record.id;
+
+  return json_build_object('status', 'success', 'message', 'Bem-vindo!');
+end;
+$$;

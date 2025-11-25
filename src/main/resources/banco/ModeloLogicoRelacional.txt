@@ -1,0 +1,28 @@
+📂 Modelo Lógico Relacional - EventHub
+Notação: Tabela (<u>Chave Primária</u>, Atributo, Chave Estrangeira)
+
+USERS (<u>id</u>, name, email, password_hash, role, created_at, updated_at)
+
+EVENTS (<u>id</u>, title, description, date_time, location, max_participants, created_at, updated_at)
+
+TICKET_TYPES (<u>id</u>, name, price, quantity, <u>event_id</u>, created_at, updated_at)
+
+event_id referencia EVENTS(id)
+
+PARTICIPANTS (<u>id</u>, name, email, phone, <u>user_id</u>, created_at, updated_at)
+
+user_id referencia USERS(id)
+
+DISCOUNT_COUPONS (<u>id</u>, code, discount_value, discount_type, valid_until, max_uses, uses, <u>event_id</u>, created_at, updated_at)
+
+event_id referencia EVENTS(id)
+
+TICKETS (<u>id</u>, ticket_code, status, issued_at, <u>ticket_type_id</u>, <u>participant_id</u>, <u>event_id</u>, <u>discount_coupon_id</u>, created_at, updated_at)
+
+ticket_type_id referencia TICKET_TYPES(id)
+
+participant_id referencia PARTICIPANTS(id)
+
+event_id referencia EVENTS(id)
+
+discount_coupon_id referencia DISCOUNT_COUPONS(id)
